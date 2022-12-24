@@ -47,15 +47,16 @@ double TW_A_dis, TW_B_dis;
 double prev_TW_A_dis, prev_TW_B_dis;
 double target_ang;
 bool dir = true;
-double powVal, turnVal=2, ang_accept=1;
-double dis = 1, dis_accept = 0.2;
+double err=2, ang_accept=1;
+double dis = 1, dis_accept = 0.3, prev_dis = dis+1, powVal;
+robot now;
 
 void record(){
   while(true){
     TW_A_dis = calc_distance(TW_forw.rotation(vex::rotationUnits::deg)); 
     TW_B_dis = calc_distance(TW_side.rotation(vex::rotationUnits::deg));
-    calcWheelVals(TW_A_dis - prev_TW_A_dis, (360.00 - InertialSensor.heading(degrees)), FWheelPos); //to unit cirling it
-    calcWheelVals(TW_B_dis - prev_TW_B_dis, std::fmod((360.00 - (InertialSensor.heading(degrees)-90)), 360.00) , SWheelPos);
+    calcWheelVals(TW_A_dis - prev_TW_A_dis, (360.00 - InertialSensor.heading(degrees))); //to unit cirling it
+    calcWheelVals(TW_B_dis - prev_TW_B_dis, std::fmod((360.00 - (InertialSensor.heading(degrees)-90)), 360.00));
      //-90 coz perpendicular
     prev_TW_A_dis = TW_A_dis;
     prev_TW_B_dis = TW_B_dis;
@@ -66,26 +67,22 @@ void record(){
     Brain.Screen.newLine();
     Brain.Screen.print("Side encoder %f inches", TW_B_dis);
     Brain.Screen.newLine();
-    Brain.Screen.print("FX: %f, FY: %f, FAng: %f", FWheelPos[0], FWheelPos[1], FWheelPos[2]);
-    Brain.Screen.newLine();
-    Brain.Screen.print("SX: %f, SY: %f, SAng: %f", SWheelPos[0], SWheelPos[1], SWheelPos[2]);
-    Brain.Screen.newLine();
     Brain.Screen.print("IX: %f, IY: %f, IAng: %f", IPos[0], IPos[1], IPos[2]);
     Brain.Screen.newLine();
-    Brain.Screen.print("TX: %f, TY: %f, TAng: %f", q.front().x, q.front().y, q.front().ang);
+    Brain.Screen.print("TX: %f, TY: %f, TAng: %f", now.x, now.y, now.ang);
     Brain.Screen.newLine();
     Brain.Screen.print("Dis: %f", dis);
     Brain.Screen.newLine();
-    Brain.Screen.print("powval: %f", powVal);
-    Brain.Screen.print("\t");
-    Brain.Screen.print("turnval: %f",  turnVal);
+    Brain.Screen.print("driveVal: %f", powVal);
+    Brain.Screen.newLine();
+    Brain.Screen.print("turn error: %f",  err);
 
-    Controller1.Screen.clearScreen();
-    Controller1.Screen.print(360.00-InertialSensor.heading(degrees));
-    Controller1.Screen.newLine();
+    // Controller1.Screen.clearScreen();
+    // Controller1.Screen.print(360.00-InertialSensor.heading(degrees));
+    // Controller1.Screen.newLine();
 
-    if(!Limit.pressing()) Cata.spin(forward, 12, volt);
-    else Cata.stop();
+    // if(!Limit.pressing()) Cata.spin(forward, 12, volt);
+    // else Cata.stop();
     wait(100, msec);
   }
 }
@@ -136,7 +133,15 @@ void pre_auton(void) {
 
 
 void autonomous(void) {
-  
+  // target_ang = 260;
+  // while(true) {
+  //     err = target_ang - InertialSensor.heading(degrees);
+  //     if(std::abs(err) >= 180){
+  //       err = -std::abs(err)/err * 360 - std::abs(err);
+  //     }
+  //     drive_motors(forward, 0, turnVals.get_value(err));
+  //     wait(20, msec);
+  //   }
   //Red / Blue with roller
   // LeftUp.spinFor(forward, 70, degrees, false);
   // RightUp.spinFor(forward, 70, degrees, false);
@@ -224,45 +229,55 @@ void autonomous(void) {
   BlueMatchAuton();
   while(!q.empty()){
     //get values
-    robot now = q.front(); q.pop();
+    now = q.front(); q.pop();
     double targetX = now.x;
     double targetY = now.y;
-    target_ang = now.ang;
+    target_ang = 360 - now.ang; //has to be like that coz - Inertial sensor orientation not IPos
     double now_ang = IPos[2];
     
     //turn
-  while(std::abs(std::abs(target_ang - now_ang) - ang_accept) >= 0.1) {
-      now_ang = 360.00 - InertialSensor.heading(degrees);
-      double err = target_ang - now_ang;
+  while(err - ang_accept >= 0.1) {
+      Controller1.Screen.setCursor(1,1);
+      Controller1.Screen.print("Turn");
+      now_ang = InertialSensor.heading(degrees);
+      err = target_ang - now_ang;
       if(std::abs(err) >= 180){
         err = -std::abs(err)/err * 360 - std::abs(err);
       }
       drive_motors(forward, 0, turnVals.get_value(err));
       wait(20, msec);
+      Controller1.Screen.clearLine();
     }
 
-    // Drive
-    while(std::abs(dis - dis_accept) >= 0.1){
-      dis = get_dis({targetX, targetY}, {FWheelPos[0], FWheelPos[1]}); 
-      //important! Compare fwheel with fwheel, ipos with ipos values! Was a very big bug, coz the distance
+    //Drive
+    while(std::abs(dis - dis_accept) >= 0.1 && dis - prev_dis < 0){ //last part to prevent robot from runnin away and do shit
+      Controller1.Screen.setCursor(1,1);
+      Controller1.Screen.print("Drive");
+      prev_dis = dis;
+      dis = get_dis({0, targetX, targetY}, {0, IPos[0], IPos[1]}); 
+      //important! Compare ipos with ipos values! Was a very big bug, coz the distance
       //got further and further away, even tho the direction and distance was correct
-      powVal = driveVals.get_value(dis); //need to tune pid a lot more
+      powVal = driveVals.get_value(dis);
       drive_motors(forward, powVal, 0);
       wait(20, msec);
+      Controller1.Screen.clearLine();
     }
 
     // Intake
     if(now.intake) Intake.spin(forward, 12, volt);
     else Intake.stop();
+    wait(20, msec);
 
     // Roller
     if(now.roller!=0) {
-      Intake.spinFor(forward, now.roller, degrees);
+      Intake.spinFor(forward, now.roller, degrees, true);
+      wait(20, msec);
     }
     else Intake.stop();
 
     // Catapult
     if(now.bruh) fire();
+    wait(20, msec);
   }
 }
 

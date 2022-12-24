@@ -2,32 +2,19 @@
 #define sin(r) sin(r / 180 * M_PI)
 #define cos(r) cos(r / 180 * M_PI)
 
-void setWheelVals(double x, double y, double ang, double wheel[3]){
-  wheel[0] += x;
-  wheel[1] += y;
-  wheel[2] = ang;
-  IPos[0] += x;
-  IPos[1] += y;
-  IPos[2]  = FWheelPos[2];
-}
-
-void calcWheelVals(double dis, double ang, double wheel[3]){
+void calcWheelVals(double dis, double ang){
   double x = dis * cos(ang); 
   double y = dis * sin(ang);
-  setWheelVals(x, y, ang, wheel);
+  IPos[0] += x;
+  IPos[1] += y;
+  IPos[2]  = 360.00 - InertialSensor.heading(degrees);
 }
 
 void initialize(double fx, double fy, double orient){
-  FWheelPos[0] = fx;
-  FWheelPos[1] = fy;
-  FWheelPos[2] = orient;
-  SWheelPos[0] = fx + dis_FS * cos(orient);
-  SWheelPos[1] = fy + dis_FS * sin(orient);
-  SWheelPos[2] = (orient+90);
-  IPos[0] = fx + dis_FI * cos(orient);
-  IPos[1] = fy + dis_FI * sin(orient);
+  IPos[0] = fx;
+  IPos[1] = fy;
   IPos[2] = orient;
-  InertialSensor.setHeading(orient, degrees);
+  InertialSensor.setHeading(360.00 - orient, degrees);
 }
 
 /*void calcCenterVals(){

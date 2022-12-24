@@ -37,12 +37,11 @@ inline double dis_FI = 8.9; //distance between forward and intake
 //-----variables-----//
 
 inline double FTVal = 0, BTVal = 0; //current tracking wheel distances
-inline double FWheelPos[3], SWheelPos[3], IPos[3]; //2 tracking wheels' x,y and angle at any moment 
+inline double IPos[3]; //Intake's x,y and angle at any moment 
 
 
 //-----functions-----//
-void setWheelVals(double x, double y, double ang, double wheel[3]); //set a specific wheel's vals
-void calcWheelVals(double dis, double ang, double wheel[3]); //calc the coord and add on, (angle change for the back wheel, as +90 degrees)
+void calcWheelVals(double dis, double ang); //calc the coord and add on, (angle change for the back wheel, as +90 degrees)
 //void calcCenterVals(); //calc the center coord and angle
 void initialize(double fx, double fy, double orient);
 

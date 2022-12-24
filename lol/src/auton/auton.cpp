@@ -9,7 +9,7 @@ using namespace vex;
 //x, y, angle, Pure Pursuit, intake, shoot, roller
 void BlueMatchAuton(){
   initialize(10.57, 112.72, 180);
-  q.push({1, 112.72, 180, false, false, false, 1000}); //go on the roller
+  q.push({5, 112.72, 180, false, false, false, 1000}); //go on the roller
   q.push({14, 112.72, 180, false, false, false, 0}); //go back from the roller to the goal
   q.push({14, 112.72, 200, false, false, true, 0});
 }

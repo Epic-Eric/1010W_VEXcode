@@ -47,8 +47,8 @@ double TW_A_dis, TW_B_dis;
 double prev_TW_A_dis, prev_TW_B_dis;
 double target_ang;
 bool dir = true;
-double err=2, ang_accept=1;
-double dis = 1, dis_accept = 0.3, prev_dis = dis+1, powVal;
+double err=3, ang_accept=1;
+double dis = 1, dis_accept = 0.3, prev_dis = -1, powVal;
 robot now;
 
 void record(){
@@ -69,7 +69,7 @@ void record(){
     Brain.Screen.newLine();
     Brain.Screen.print("IX: %f, IY: %f, IAng: %f", IPos[0], IPos[1], IPos[2]);
     Brain.Screen.newLine();
-    Brain.Screen.print("TX: %f, TY: %f, TAng: %f", now.x, now.y, now.ang);
+    Brain.Screen.print("TX: %f, TY: %f, TAng: %f", now.x, now.y, calc_ang(IPos[0], IPos[1], now.x, now.y));
     Brain.Screen.newLine();
     Brain.Screen.print("Dis: %f", dis);
     Brain.Screen.newLine();
@@ -83,11 +83,8 @@ void record(){
 
     // if(!Limit.pressing()) Cata.spin(forward, 12, volt);
     // else Cata.stop();
-    wait(100, msec);
-  }
-}
-void rewind(void){
-  while(true){
+
+    dis = get_dis({now.x, now.y}, {IPos[0], IPos[1]});
     wait(100, msec);
   }
 }
@@ -230,31 +227,27 @@ void autonomous(void) {
   while(!q.empty()){
     //get values
     now = q.front(); q.pop();
-    double targetX = now.x;
-    double targetY = now.y;
-    target_ang = 360 - now.ang; //has to be like that coz - Inertial sensor orientation not IPos
-    double now_ang = IPos[2];
     
     //turn
-  while(err - ang_accept >= 0.1) {
-      Controller1.Screen.setCursor(1,1);
-      Controller1.Screen.print("Turn");
-      now_ang = InertialSensor.heading(degrees);
-      err = target_ang - now_ang;
+  target_ang = now.ang;
+
+  while(true) {
+      err = target_ang - InertialSensor.heading(degrees);
       if(std::abs(err) >= 180){
         err = -std::abs(err)/err * 360 - std::abs(err);
       }
+      if(err<=1) {err=2; break;}
       drive_motors(forward, 0, turnVals.get_value(err));
       wait(20, msec);
-      Controller1.Screen.clearLine();
     }
 
     //Drive
-    while(std::abs(dis - dis_accept) >= 0.1 && dis - prev_dis < 0){ //last part to prevent robot from runnin away and do shit
+      prev_dis = -1; //had the bug of not resetting after an iteration
+
+    while(std::abs(dis - dis_accept) >= 0.1 && (prev_dis == -1||dis <= prev_dis)){ //last part to prevent robot from runnin away and do shit
       Controller1.Screen.setCursor(1,1);
       Controller1.Screen.print("Drive");
       prev_dis = dis;
-      dis = get_dis({0, targetX, targetY}, {0, IPos[0], IPos[1]}); 
       //important! Compare ipos with ipos values! Was a very big bug, coz the distance
       //got further and further away, even tho the direction and distance was correct
       powVal = driveVals.get_value(dis);
@@ -263,23 +256,24 @@ void autonomous(void) {
       Controller1.Screen.clearLine();
     }
 
-    // Intake
-    if(now.intake) Intake.spin(forward, 12, volt);
-    else Intake.stop();
-    wait(20, msec);
+    // // Intake
+    // if(now.intake) Intake.spin(forward, 12, volt);
+    // else Intake.stop();
+    // wait(20, msec);
 
-    // Roller
-    if(now.roller!=0) {
-      Intake.spinFor(forward, now.roller, degrees, true);
-      wait(20, msec);
-    }
-    else Intake.stop();
+    // // Roller
+    // if(now.roller!=0) {
+    //   Intake.spin(forward, 12, volt);
+    //   wait(now.roller, msec);
+    // }
+    // else Intake.stop();
 
-    // Catapult
-    if(now.bruh) fire();
-    wait(20, msec);
+    // // Catapult
+    // if(now.bruh) fire();
+    // wait(20, msec);
   }
 }
+
 
 void usercontrol(void) {
   // User control code here, inside the loop
@@ -328,8 +322,8 @@ void usercontrol(void) {
     else Intake.stop();
       
     //Catapult == 8 rubber bands
-    //if(!Limit.pressing()) Cata.spin(forward, 12, volt);
-    //else Cata.stop();
+    // if(!Limit.pressing()) Cata.spin(forward, 12, volt);
+    // else Cata.stop();
     Controller1.ButtonR2.pressed(fire);
 
 
@@ -352,8 +346,7 @@ int main() { //2 examples of threads that can run by itself, driver and while lo
   pre_auton();
   thread t1(record);
   t1.join();
-  //thread t2(rewind);
-  //t2.join();
+  
   // Prevent main from exiting with an infinite loop.
   while (true) {
     wait(100, msec);

@@ -44,5 +44,7 @@ inline double IPos[3]; //Intake's x,y and angle at any moment
 void calcWheelVals(double dis, double ang); //calc the coord and add on, (angle change for the back wheel, as +90 degrees)
 //void calcCenterVals(); //calc the center coord and angle
 void initialize(double fx, double fy, double orient);
+double a_tan(double ratio);
+double calc_ang(double x1, double y1, double x2, double y2);
 
 #endif

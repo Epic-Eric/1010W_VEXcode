@@ -27,7 +27,7 @@ struct PID { //struct = public, class = private, we've got noth' to hide
 inline double kDrive[3] = {0.44, 0.000001, 15}; //0.44 & 0.0000001 & 15//WHY DOESN"T PID VALUE CHANGE UNTIL YOU CHANGE MAIN? 
 //--> If not changes to main, still runs (it assumes you had the same program) , but no compiles, otherwise too much time including downloading imports, so it doesn't compile the #include header files unnecessarily!! Have to make changes to main every time :)
 inline PID driveVals(kDrive);
-inline double kTurn[3] = {0.1155, 0.00001, 0.025};
+inline double kTurn[3] = {0.185, 0.0001, 0.025}; //0.1155 0.025
 inline PID turnVals(kTurn);
 
 

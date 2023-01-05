@@ -17,6 +17,28 @@ void initialize(double fx, double fy, double orient){
   InertialSensor.setHeading(360.00 - orient, degrees);
 }
 
+double a_tan(double ratio){
+    return atan(ratio) * 180 / M_PI;
+}
+
+double calc_ang(double x1, double y1, double x2, double y2){
+    int x = std::abs(x2-x1);
+    int y = std::abs(y2-y1);
+    if(x2>x1 && y2>y1){ //1st quadrant
+        return (a_tan(y/x));
+    }
+    if(x2<x1 && y2>y1){ //2nd quadrant
+        return 180 - (a_tan(y/x));
+    }
+    if(x2<x1 && y2<y1){ //3rd quadrant
+        return 180 + (a_tan(y/x));
+    }
+    if(x2>x1 && y2<y1){ //4th quadrant
+        return 360 - (a_tan(y/x));
+    }
+    return 0;
+}
+
 /*void calcCenterVals(){
   int m1 = (LWheelPos[1] - RWheelPos[1]) / (LWheelPos[0] - RWheelPos[0]); //m = y1 - y / x1 - x
   int b1 = (LWheelPos[1]) - (m1 * LWheelPos[0]); //y = mx + b ---> b = y - mx

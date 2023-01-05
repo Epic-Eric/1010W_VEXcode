@@ -18,4 +18,6 @@ struct robot{
 };
 inline std::queue<robot> q;
 
+
+
 #endif 

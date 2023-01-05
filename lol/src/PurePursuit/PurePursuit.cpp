@@ -4,7 +4,7 @@
 #include <cmath>
 #include "vex.h"
 
-#define SQD(n) pow(n,2)
+#define SQD(n) std::pow(n,2)
 
 //returns the sign of a num
 int sign(double x) {
@@ -18,7 +18,7 @@ double get_degrees() {
 }
 
 double get_dis(std::vector<double> p1, std::vector<double> p2) {
-  return sqrt(SQD(p1[0] - p2[0]) + SQD(p1[1] - p2[1]));
+  return std::sqrt(SQD(p1[0] - p2[0]) + SQD(p1[1] - p2[1]));
 }
 
 /*return: The intersection between a circle centered on our Robot's current position with radius and the 
